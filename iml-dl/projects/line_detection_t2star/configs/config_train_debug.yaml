@@ -1,0 +1,85 @@
+name: Setting_Up
+train_batch_size: &tbatch_size 64
+select_echo: &select_echo False
+data_loader: &data_loader
+  module_name: data.t2star_loader
+  class_name: RawMotionT2starLoader
+  params:
+    args:
+      batch_size: *tbatch_size
+      data_dir:
+        train: './data/links_to_data/recon_train-simulated_motion/'
+        val: './data/links_to_data/recon_train-simulated_motion/'   # adapt to val
+        test: './data/links_to_data/recon_train-simulated_motion/'   # adapt to val
+      only_brainmask_slices: True
+      bm_thr: 0.2
+      normalize: "percentile_image"
+      normalize_volume: True
+      select_echo: *select_echo
+      select_one_scan:  "SQ-struct-30-sim00"   # delete if not debugging
+      drop_last: False
+      simulated_data: # either False or dictionary
+        pixel_spacing: [3.3, 2, 2]
+        motion_threshold: 2.0
+#
+# Experiment
+#
+experiment:
+  name: LineDetT2star_Debug
+  task: train
+  weights:
+#
+device: gpu
+configurator:
+  module_name: core.Configurator
+  class_name: DLConfigurator
+  params:
+#
+# Model
+#
+model:
+  module_name: model_zoo.cnn_line_detection
+  class_name: RealValCNNLineDet
+  params:
+    input_dim: 2
+    input_size: [12, 92, 112]
+    crop_readout: False
+    output_size: [1, 92]
+    first_filters: 8
+    last_filters: [8]
+    kernel_size: 3
+    num_layer: 4
+    activation: "relu"
+    normalization: "BatchNorm"
+    dropout: 0.2
+    increasing_filters: True
+#
+# Trainer
+#
+trainer:
+  module_name: projects.line_detection_t2star.trainer
+  class_name: PTrainer
+  params:
+    checkpoint_path: './results/line_detection_t2star/debug/weights/'
+    nr_epochs: 100 # 300
+    patience:  300
+    wandb_log_gradients: False
+    early_stop_regularisation: True
+    coils_channel_dim: False
+    coil_combined: True
+    input_size: [4, 2, 12, 92, 112]
+    # Losses
+    loss:
+      module_name: optim.losses.classification_losses
+      class_name: WeightedCrossEntropyAcrossLines
+      params:
+        weight_cl0: 5
+    optimizer: "adam"
+    optimizer_params:
+      lr: 5.0e-4
+      weight_decay: 1.0e-3
+  data_loader: *data_loader
+#
+# Downstream tasks
+#
+# none for now

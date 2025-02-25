@@ -1,0 +1,131 @@
+name: KeepCenter-EvenOdd
+train_batch_size: &tbatch_size 20
+select_echo: &select_echo False
+random_mask: &random_mask ["RandomCenterPixel", 0.5, 10]
+keep_center_train: &keep_center_train True
+keep_center_downstream: &keep_center_downstream True
+var_acc_rate: &var_acc_rate [0.05, 0.51]  # or "None" for constant acceleration rate
+recon_model_params: &recon_model_params
+  nr_iterations: 5
+  dc_method: "GD"
+  denoiser_method: "Real2chCNN"
+  weight_sharing: False
+  select_echo: *select_echo
+  nr_filters: 64
+  kernel_size: 3
+  nr_layers: 5
+  activation: "relu"
+recon_model_train: &recon_model_train
+  weights: './results/recon_t2star/weights/2024_10_21_14_10_48_882468/best_model.pt'  #insert id of your trained model here
+  module_name: model_zoo.unrolled_recon
+  class_name: ComplexUnrolledNetwork
+  params: *recon_model_params
+recon_model_downstream: &recon_model_downstream
+  weights: './results/recon_t2star/weights/2024_10_21_14_10_48_882468/best_model.pt'  #insert id of your trained model here
+  module_name: model_zoo.unrolled_recon
+  class_name: ComplexUnrolledNetwork
+  params: *recon_model_params
+#
+# Data
+#
+data_loader: &data_loader
+  module_name: data.t2star_loader
+  class_name: RawMotionT2starLoader
+  params:
+    args:
+      batch_size: *tbatch_size
+      data_dir:
+        train: './data/links_to_data/recon_test-extreme_motion/'   #test-patterns
+        test: './data/links_to_data/recon_test-extreme_motion/'   #test-patterns
+      only_brainmask_slices: True
+      bm_thr: 0.2
+      normalize: "percentile_image"
+      normalize_volume: True
+      select_echo: *select_echo
+      random_mask: *random_mask
+      var_acc_rate: *var_acc_rate
+      select_one_scan: ""
+      drop_last: False
+      slice_ranges_file: "./projects/moco_t2star/configs/mrm/real_motion/slice_ranges.yaml"
+      simulated_data: False
+#
+# Experiment
+#
+experiment:
+  name: MRM_MoCoExperiments
+  group: ""
+  task: train
+  weights:
+#
+device: gpu
+configurator:
+  module_name: core.Configurator
+  class_name: DLConfigurator
+  params:
+#
+# Model
+#
+model:
+  hyper_setup: False
+  module_name: model_zoo.mlp
+  class_name: DirectParameterOptim
+  params:
+      output_size: 92
+      init_fill: 0.5
+      even_odd: True
+      activation: "none"
+#
+# Trainer
+#
+trainer:
+  module_name: projects.moco_t2star.trainer
+  class_name: PTrainer
+  params:
+    checkpoint_path: './results/moco_t2star/weights/'
+    nr_epochs: 100
+    patience:  100
+#    early_stopping_delta: 0.0002
+    wandb_log_gradients: False
+    early_stop_regularisation: False
+    keep_center: *keep_center_train
+    exclude_last_echoes: False
+    # Losses
+    physics_loss:
+      module_name: optim.losses.physics_losses
+      class_name: ModelFitError
+      params:
+        mask_image: True
+        error_type: "emp_corr"
+        perform_bgf_corr: False
+      lambda: 1.0
+    reg_loss:
+      module_name: optim.losses.regularisation
+      class_name: CenterWeightedMeanExclusionRate
+      params:
+        scaling_factor: 2
+      lambda: 0.005
+    2nd_reg_loss:
+      module_name: optim.losses.regularisation
+      class_name: MaskVariabilityAcrossSlices
+      params:
+      lambda: 0.0
+    optimizer: "adam"
+    optimizer_params:
+      lr: 1.0e-2
+    recon_model: *recon_model_train
+  data_loader: *data_loader
+#
+# Downstream tasks
+#
+downstream_tasks:
+  T2StarMotionCorrection:
+    module_name: projects.moco_t2star.downstream_evaluator
+    class_name: PDownstreamEvaluator
+    checkpoint_path: './results/moco_t2star/downstream_metrics/'
+    params:
+      task: "moco"
+      include_brainmask: True
+      recon_model_params: *recon_model_downstream
+      keep_center: *keep_center_downstream
+      save_predictions: True
+    data_loader: *data_loader

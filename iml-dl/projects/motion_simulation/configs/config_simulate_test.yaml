@@ -1,0 +1,18 @@
+data_import:
+  dataset_split: "test"
+  subject_curve_mapping_file: "_distributed_filenames_24-08-06.json"
+  raw_data_folder: "/PATH/TO/RAW/DATA/" # insert path to raw data (already converted to HDF5)
+  motion_data_folder: "/PATH/TO/SELECTED/MOTION/DATA/" # insert path to motion data (selected and preprocessed curves)
+  shift_by_median_position: True
+simulation:
+  include_motion_transform: True
+  include_inhomogeneities: True
+  threshold_motion_transform: True
+  motion_threshold: 2
+  b0_range: [3, 5]
+output:
+  simulated_data_folder: "INSERT/PATH/TO/SIMULATED/DATA/" # insert path to save simulated data
+  save_plots: True
+  output_dir_plots: "./results/motion_simulation/plots/"
+
+

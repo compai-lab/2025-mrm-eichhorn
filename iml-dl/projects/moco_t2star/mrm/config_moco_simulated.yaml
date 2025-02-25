@@ -1,0 +1,167 @@
+test_set: "test-simulated"
+
+defaults:
+  checkpoint_path: &checkpoint_path './results/moco_t2star/'
+  tag: &tag "hrqr"
+  out_folder: &out_folder "./results/MRM/"
+  recalculate: &recalcualte False
+  data_params: &default_data_params
+    only_bm_slices: True
+    bm_thr: 0.2
+    normalize: "percentile_image"
+    normalize_volume: True
+    min_slice_nr:
+      default: 0
+    simulated_data:
+      pixel_spacing: [ 3.3, 2, 2 ]
+      motion_threshold: 2.0
+  experiments:
+    Proposed: &default_proposed
+      module_name: model_zoo.mlp
+      class_name: DirectParameterOptim
+      params:
+        output_size: 92
+        init_fill: 0.5
+        even_odd: True
+        activation: "none"
+      keep_center: True
+    NoKeepCenter: &default_no_keep_center
+      module_name: model_zoo.mlp
+      class_name: DirectParameterOptim
+      params:
+        output_size: 92
+        init_fill: 0.5
+        even_odd: True
+        activation: "none"
+      keep_center: False
+    AllSlices: &default_all_slices
+      module_name: model_zoo.mlp
+      class_name: DirectParameterOptim
+      params:
+        output_size: 92
+        init_fill: 0.5
+        even_odd: False
+        activation: "none"
+      keep_center: True
+    AllSlices-NoKeepCenter: &default_all_slices_no_keep_center
+      module_name: model_zoo.mlp
+      class_name: DirectParameterOptim
+      params:
+        output_size: 92
+        init_fill: 0.5
+        even_odd: False
+        activation: "none"
+      keep_center: False
+  orba-settings: &orba-settings
+    recon_model:
+      weights: './results/recon_t2star/weights/2024_11_22_09_05_38_329822/best_model.pt'
+      # insert id of your trained model (VarDens with KeepCenter) here
+      module_name: model_zoo.unrolled_recon
+      class_name: ComplexUnrolledNetwork
+      params:
+        nr_iterations: 5
+        dc_method: "GD"
+        denoiser_method: "Real2chCNN"
+        weight_sharing: False
+        partial_weight_sharing: False
+        select_echo: False
+        nr_filters: 64
+        kernel_size: 3
+        nr_layers: 5
+        activation: "relu"
+    bootstrap_mask: [ "VarDensBlocksCenterPixel", 0.5, 3 ]
+    nr_random_masks: 15
+    keep_center: True
+  sld-settings: &sld-settings
+    recon_model:
+      weights: './results/recon_t2star/weights/2024_10_21_14_10_48_882468/best_model.pt'
+      # insert id of your trained model (KeepCenter) here
+      module_name: model_zoo.unrolled_recon
+      class_name: ComplexUnrolledNetwork
+      params:
+        nr_iterations: 5
+        dc_method: "GD"
+        denoiser_method: "Real2chCNN"
+        weight_sharing: False
+        partial_weight_sharing: False
+        select_echo: False
+        nr_filters: 64
+        kernel_size: 3
+        nr_layers: 5
+        activation: "relu"
+    sld_model:
+      module_name: model_zoo.cnn_line_detection
+      class_name: RealValCNNLineDet
+      weights: './results/line_detection_t2star/weights/2024_12_02_09_35_02_722072/best_model.pt'
+      # insert id of your trained model (line detection) here
+      params:
+        input_dim: 2
+        input_size: [ 12, 92, 112 ]
+        crop_readout: False
+        output_size: [ 1, 92 ]
+        first_filters: 8
+        last_filters: [ 8 ]
+        kernel_size: 3
+        num_layer: 4
+        activation: "relu"
+        normalization: "BatchNorm"
+        dropout: 0.2
+        increasing_filters: True
+    coils_channel_dim: False
+    coil_combined: True
+    keep_center: True
+
+configurations:
+  test-simulated:
+    checkpoint_path: *checkpoint_path
+    tag: *tag
+    out_folder: *out_folder
+    recalculate: *recalcualte
+    subjects:
+      SQ-struct-38-sim00: "simulated"
+      SQ-struct-45-sim00: "simulated"
+      SQ-struct-33-sim00: "simulated"
+      SQ-struct-43-sim00: "simulated"
+      SQ-struct-46-sim00: "simulated"
+      SQ-struct-00-sim00: "simulated"
+      SQ-struct-44-sim00: "simulated"
+      SQ-struct-47-sim00: "simulated"
+      SQ-struct-48-sim00: "simulated"
+      SQ-struct-38-sim01: "simulated"
+      SQ-struct-45-sim01: "simulated"
+      SQ-struct-33-sim01: "simulated"
+      SQ-struct-43-sim01: "simulated"
+      SQ-struct-46-sim01: "simulated"
+      SQ-struct-00-sim01: "simulated"
+      SQ-struct-44-sim01: "simulated"
+      SQ-struct-47-sim01: "simulated"
+      SQ-struct-48-sim01: "simulated"
+      SQ-struct-38-sim02: "simulated"
+      SQ-struct-45-sim02: "simulated"
+      SQ-struct-33-sim02: "simulated"
+      SQ-struct-43-sim02: "simulated"
+      SQ-struct-46-sim02: "simulated"
+      SQ-struct-00-sim02: "simulated"
+      SQ-struct-44-sim02: "simulated"
+      SQ-struct-47-sim02: "simulated"
+      SQ-struct-48-sim02: "simulated"
+    data_params:
+      <<: *default_data_params
+      path: './data/links_to_data/recon_test-simulated_motion/'
+    experiments:
+      Proposed:
+        <<: *default_proposed
+        id: group-2024-11-22_10-59-54   # insert group id of your trained models here
+      NoKeepCenter:
+        <<: *default_no_keep_center
+        id: group-2024-11-22_11-05-52   # insert group id of your trained models here
+      AllSlices:
+        <<: *default_all_slices
+        id: group-2024-11-22_11-05-14   # insert group id of your trained models here
+      AllSlices-NoKeepCenter:
+        <<: *default_all_slices_no_keep_center
+        id: group-2024-11-22_11-05-32   # insert group id of your trained models here
+    orba-settings:
+      <<: *orba-settings
+    sld-settings:
+      <<: *sld-settings

@@ -1,0 +1,214 @@
+# Choose the test set to run the experiments on
+#test_set: "test-patterns"
+#test_set: "test"
+test_set: "test-extreme"
+
+defaults:
+  checkpoint_path: &checkpoint_path './results/moco_t2star/'
+  tag: &tag "extreme_motion"
+  out_folder: &out_folder "./results/MRM/"
+  recalculate: &recalcualte True
+  reregister: &reregister False
+  data_params: &default_data_params
+    only_bm_slices: True
+    bm_thr: 0.2
+    normalize: "percentile_image"
+    normalize_volume: True
+    min_slice_nr:
+      default: 0
+    simulated_data: False
+  experiments:
+    Proposed: &default_proposed
+      module_name: model_zoo.mlp
+      class_name: DirectParameterOptim
+      params:
+        output_size: 92
+        init_fill: 0.5
+        even_odd: True
+        activation: "none"
+      keep_center: True
+    NoKeepCenter: &default_no_keep_center
+      module_name: model_zoo.mlp
+      class_name: DirectParameterOptim
+      params:
+        output_size: 92
+        init_fill: 0.5
+        even_odd: True
+        activation: "none"
+      keep_center: False
+    AllSlices: &default_all_slices
+      module_name: model_zoo.mlp
+      class_name: DirectParameterOptim
+      params:
+        output_size: 92
+        init_fill: 0.5
+        even_odd: False
+        activation: "none"
+      keep_center: True
+    AllSlices-NoKeepCenter: &default_all_slices_no_keep_center
+      module_name: model_zoo.mlp
+      class_name: DirectParameterOptim
+      params:
+        output_size: 92
+        init_fill: 0.5
+        even_odd: False
+        activation: "none"
+      keep_center: False
+  orba-settings: &orba-settings
+    recon_model:
+      weights: './results/recon_t2star/weights/2024_11_22_09_05_38_329822/best_model.pt'
+      # insert id of your trained model (VarDens with KeepCenter) here
+      module_name: model_zoo.unrolled_recon
+      class_name: ComplexUnrolledNetwork
+      params:
+        nr_iterations: 5
+        dc_method: "GD"
+        denoiser_method: "Real2chCNN"
+        weight_sharing: False
+        partial_weight_sharing: False
+        select_echo: False
+        nr_filters: 64
+        kernel_size: 3
+        nr_layers: 5
+        activation: "relu"
+    bootstrap_mask: ["VarDensBlocksCenterPixel", 0.5, 3]
+    nr_random_masks: 15
+    keep_center: True
+  sld-settings: &sld-settings
+    recon_model:
+      weights: './results/recon_t2star/weights/2024_10_21_14_10_48_882468/best_model.pt'
+      # insert id of your trained model (KeepCenter) here
+      module_name: model_zoo.unrolled_recon
+      class_name: ComplexUnrolledNetwork
+      params:
+        nr_iterations: 5
+        dc_method: "GD"
+        denoiser_method: "Real2chCNN"
+        weight_sharing: False
+        partial_weight_sharing: False
+        select_echo: False
+        nr_filters: 64
+        kernel_size: 3
+        nr_layers: 5
+        activation: "relu"
+    sld_model:
+      module_name: model_zoo.cnn_line_detection
+      class_name: RealValCNNLineDet
+      weights: './results/line_detection_t2star/weights/2024_12_02_09_35_02_722072/best_model.pt'
+      # insert id of your trained model (line detection) here
+      params:
+        input_dim: 2
+        input_size: [ 12, 92, 112 ]
+        crop_readout: False
+        output_size: [ 1, 92 ]
+        first_filters: 8
+        last_filters: [ 8 ]
+        kernel_size: 3
+        num_layer: 4
+        activation: "relu"
+        normalization: "BatchNorm"
+        dropout: 0.2
+        increasing_filters: True
+    coils_channel_dim: False
+    coil_combined: True
+    keep_center: True
+
+configurations:
+  test:
+    checkpoint_path: *checkpoint_path
+    tag: *tag
+    out_folder: *out_folder
+    recalculate: *recalcualte
+    reregister: *reregister
+    subjects:
+      SQ-struct-38: "stronger"
+      SQ-struct-45: "minor"
+      SQ-struct-33: "minor"
+      SQ-struct-43: "stronger"
+      SQ-struct-46: "stronger"
+      SQ-struct-00: "stronger"  # motion timing
+      SQ-struct-44: "minor"  # motion timing
+      SQ-struct-47: "minor"  # motion timing
+      SQ-struct-48: "stronger"  # motion timing
+    data_params:
+      <<: *default_data_params
+      path: './data/links_to_data/recon_test_motion/'
+    experiments:
+      Proposed:
+        <<: *default_proposed
+        id: group-2024-10-28_10-19-05
+      NoKeepCenter:
+        <<: *default_no_keep_center
+        id: group-2024-10-28_11-58-30
+      AllSlices:
+        <<: *default_all_slices
+        id: group-2024-10-28_09-16-58
+      AllSlices-NoKeepCenter:
+        <<: *default_all_slices_no_keep_center
+        id: group-2024-10-29_11-04-40
+    orba-settings:
+      <<: *orba-settings
+    sld-settings:
+      <<: *sld-settings
+  test-patterns:
+    checkpoint_path: *checkpoint_path
+    tag: *tag
+    out_folder: *out_folder
+    recalculate: *recalcualte
+    reregister: *reregister
+    subjects:
+      SQ-struct-04-p1-low: "minor"
+      SQ-struct-04-p1-mid: "stronger"
+      SQ-struct-04-p1-high: "stronger"
+      SQ-struct-04-p2-low: "minor"
+      SQ-struct-04-p2-mid: "stronger"
+      SQ-struct-04-p2-high: "stronger"
+      SQ-struct-04-p3-low: "minor"
+      SQ-struct-04-p3-mid: "stronger"
+      SQ-struct-04-p3-high: "stronger"
+      SQ-struct-04-p4-low: "minor"
+      SQ-struct-04-p4-mid: "stronger"
+      SQ-struct-04-p4-high: "stronger"
+    data_params:
+      <<: *default_data_params
+      path: './data/links_to_data/recon_test-patterns_motion/'
+    experiments:
+      Proposed:
+        <<: *default_proposed
+        id: group-2024-10-28_10-55-02
+      NoKeepCenter:
+        <<: *default_no_keep_center
+        id: group-2024-10-28_10-55-56
+      AllSlices:
+        <<: *default_all_slices
+        id: group-2024-10-28_09-18-46
+      AllSlices-NoKeepCenter:
+        <<: *default_all_slices_no_keep_center
+        id: group-2024-10-29_11-03-58
+    orba-settings:
+      <<: *orba-settings
+    sld-settings:
+      <<: *sld-settings
+  test-extreme:
+    checkpoint_path: *checkpoint_path
+    tag: *tag
+    out_folder: *out_folder
+    recalculate: *recalcualte
+    reregister: *reregister
+    subjects:
+      SQ-struct-01: "stronger"  # motion timing
+      SQ-struct-02: "stronger"  # motion timing
+    data_params:
+      <<: *default_data_params
+      path: './data/links_to_data/recon_test-extreme_motion/'
+    experiments:
+      Proposed:
+        <<: *default_proposed
+        id: group-2025-01-22_10-48-18   # insert group id of your trained models here
+      AllSlices-NoKeepCenter:
+        <<: *default_all_slices_no_keep_center
+        id: group-2025-01-22_10-56-48   # insert group id of your trained models here
+    orba-settings:
+      <<: *orba-settings
+    sld-settings:
+      <<: *sld-settings

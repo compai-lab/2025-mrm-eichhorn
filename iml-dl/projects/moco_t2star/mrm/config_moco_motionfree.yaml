@@ -1,0 +1,136 @@
+test_set: "test-motionfree"
+
+defaults:
+  checkpoint_path: &checkpoint_path './results/moco_t2star/'
+  tag: &tag "threshold_sld"
+  out_folder: &out_folder "./results/MRM/"
+  data_params: &default_data_params
+    only_bm_slices: True
+    bm_thr: 0.2
+    normalize: "percentile_image"
+    normalize_volume: True
+    min_slice_nr:
+      default: 0
+    simulated_data: False
+  experiments:
+    Proposed: &default_proposed
+      module_name: model_zoo.mlp
+      class_name: DirectParameterOptim
+      params:
+        output_size: 92
+        init_fill: 0.5
+        even_odd: True
+        activation: "none"
+      keep_center: True
+    NoKeepCenter: &default_no_keep_center
+      module_name: model_zoo.mlp
+      class_name: DirectParameterOptim
+      params:
+        output_size: 92
+        init_fill: 0.5
+        even_odd: True
+        activation: "none"
+      keep_center: False
+    AllSlices: &default_all_slices
+      module_name: model_zoo.mlp
+      class_name: DirectParameterOptim
+      params:
+        output_size: 92
+        init_fill: 0.5
+        even_odd: False
+        activation: "none"
+      keep_center: True
+    AllSlices-NoKeepCenter: &default_all_slices_no_keep_center
+      module_name: model_zoo.mlp
+      class_name: DirectParameterOptim
+      params:
+        output_size: 92
+        init_fill: 0.5
+        even_odd: False
+        activation: "none"
+      keep_center: False
+  orba-settings: &orba-settings
+    recon_model:
+      weights: './results/recon_t2star/weights/2024_11_22_09_05_38_329822/best_model.pt'
+      # insert id of your trained model (VarDens with KeepCenter) here
+      module_name: model_zoo.unrolled_recon
+      class_name: ComplexUnrolledNetwork
+      params:
+        nr_iterations: 5
+        dc_method: "GD"
+        denoiser_method: "Real2chCNN"
+        weight_sharing: False
+        partial_weight_sharing: False
+        select_echo: False
+        nr_filters: 64
+        kernel_size: 3
+        nr_layers: 5
+        activation: "relu"
+    bootstrap_mask: [ "VarDensBlocksCenterPixel", 0.5, 3 ]
+    nr_random_masks: 15
+    keep_center: True
+  sld-settings: &sld-settings
+    recon_model:
+      weights: './results/recon_t2star/weights/2024_10_21_14_10_48_882468/best_model.pt'
+      # insert id of your trained model (KeepCenter) here
+      module_name: model_zoo.unrolled_recon
+      class_name: ComplexUnrolledNetwork
+      params:
+        nr_iterations: 5
+        dc_method: "GD"
+        denoiser_method: "Real2chCNN"
+        weight_sharing: False
+        partial_weight_sharing: False
+        select_echo: False
+        nr_filters: 64
+        kernel_size: 3
+        nr_layers: 5
+        activation: "relu"
+    sld_model:
+      module_name: model_zoo.cnn_line_detection
+      class_name: RealValCNNLineDet
+      weights: './results/line_detection_t2star/weights/2024_12_02_09_35_02_722072/best_model.pt'
+      # insert id of your trained model (line detection) here
+      params:
+        input_dim: 2
+        input_size: [ 12, 92, 112 ]
+        crop_readout: False
+        output_size: [ 1, 92 ]
+        first_filters: 8
+        last_filters: [ 8 ]
+        kernel_size: 3
+        num_layer: 4
+        activation: "relu"
+        normalization: "BatchNorm"
+        dropout: 0.2
+        increasing_filters: True
+    coils_channel_dim: False
+    coil_combined: True
+    keep_center: True
+
+configurations:
+  test-motionfree:
+    checkpoint_path: *checkpoint_path
+    tag: *tag
+    out_folder: *out_folder
+    subjects:
+      SQ-struct-38-motionfree: "minor"
+      SQ-struct-45-motionfree: "minor"
+      SQ-struct-33-motionfree: "minor"
+      SQ-struct-43-motionfree: "minor"
+      SQ-struct-46-motionfree: "minor"
+      SQ-struct-00-motionfree: "minor"
+      SQ-struct-44-motionfree: "minor"
+      SQ-struct-47-motionfree: "minor"
+      SQ-struct-48-motionfree: "minor"
+    data_params:
+      <<: *default_data_params
+      path: './data/links_to_data/recon_test-motionfree_motion/'
+    experiments:
+      Proposed:
+        <<: *default_proposed
+        id: group-2024-11-22_14-31-56   # insert group id of your trained models here
+    orba-settings:
+      <<: *orba-settings
+    sld-settings:
+      <<: *sld-settings
