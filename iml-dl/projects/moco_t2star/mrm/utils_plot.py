@@ -647,6 +647,44 @@ def plot_line_det_metrics(line_detection_metrics, slices_ind,
     plt.show()
 
 
+def plot_violin_line_det_freq_dep(line_detection_metrics, exps, save_path=None):
+
+    descrs = ["accuracy_lowfreq", "accuracy_medfreq", "accuracy_highfreq"]
+    positions = np.linspace(1, 3, 3)/2
+    if len(exps) == 2:
+        positions = np.linspace(1, 3, 3)/3*2 - 0.1
+    elif len(exps) > 2:
+        print("Only one or two experiments are supported.")
+    fig, ax = plt.subplots(figsize=(5, 5))
+    sfs, lfs = adapt_font_size(5)
+    vp = add_violins(ax, [list(line_detection_metrics[descr][exps[0]].values()) for descr in descrs],
+                     positions=positions,
+                     colors=(["#BEBEBE", "#BEBEBE", "#BEBEBE"] if len(exps) == 2
+                             else ["#6C8B57", "#6C8B57", "#6C8B57"]),
+                     alphas=[0.7, 0.7, 0.7, 0.7])
+    for v in vp['bodies']:
+        v.set_zorder(2)
+    if len(exps) == 2:
+        vp = add_violins(ax, [list(line_detection_metrics[descr][exps[1]].values()) for descr in descrs],
+                         positions=positions+0.2,
+                         colors=["#6C8B57", "#6C8B57", "#6C8B57"],
+                         alphas=[0.9, 0.9, 0.9, 0.9])
+        for v in vp['bodies']:
+            v.set_zorder(2)
+        positions = positions + 0.1
+    plt.xticks(positions, ["low", "medium", "high"], fontsize=sfs)
+    plt.xlabel("k-space frequencies", fontsize=lfs)
+    ax.tick_params(axis='y', which='major', labelsize=sfs)
+    plt.ylabel("Line Detection Accuracy", fontsize=lfs)
+    plt.ylim(0.6, 1.02)
+    ax.yaxis.grid(True, which='both', linestyle='--', linewidth=0.8, zorder=0)
+    plt.subplots_adjust(left=0.25, right=0.98, top=0.95, bottom=0.2)
+    if save_path is not None:
+        fig.savefig(save_path.replace(".png", ".svg"), dpi=300,
+                    bbox_inches='tight')
+    plt.show()
+
+
 def grid_imshow_center_recons(img_zf, img_zf_motion, echoes, save_path=None, cmap='gray'):
 
     n_cols = len(echoes)

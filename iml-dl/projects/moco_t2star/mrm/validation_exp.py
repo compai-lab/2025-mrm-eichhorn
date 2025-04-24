@@ -174,6 +174,9 @@ line_detection_metrics = {
     "wrongly_excluded": {exp_name: {} for exp_name in keys},
     "mae_masks": {exp_name: {} for exp_name in keys},
     "accuracy": {exp_name: {} for exp_name in keys},
+    "accuracy_lowfreq": {exp_name: {} for exp_name in keys},
+    "accuracy_medfreq": {exp_name: {} for exp_name in keys},
+    "accuracy_highfreq": {exp_name: {} for exp_name in keys},
     "precision_central": {exp_name: {} for exp_name in keys},
     "recall_central": {exp_name: {} for exp_name in keys},
     "precision_peripheral": {exp_name: {} for exp_name in keys},
@@ -225,6 +228,13 @@ for slice_ind in [3, 13, 23]:
     individual_imshow(data_dict["mask_phimo"]["AllSlices"][subject][ind],
                       save_path=f"{outfolder}mask_phimo_AllSlices_{subject}"
                                 f"_slice_{slice_ind}.png")
+
+
+"""2a. Plot Line detection metrics for different k-space regions: """
+plot_violin_line_det_freq_dep(line_detection_metrics,
+                              ["AllSlices-NoKeepCenter", "Proposed"],
+                              save_path=f"{config['out_folder']}/images_for_figures"
+                              f"/validation/line_det_freq_dep.png")
 
 
 """ 3. Example reconstructions for central four k-space points: """

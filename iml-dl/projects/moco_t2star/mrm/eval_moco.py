@@ -513,7 +513,7 @@ if config["test_set"] == "test-patterns":
                           save_path=f"{outfolder}mask_sld_{subject}"
                                     f"_slice_{slice_ind}.png")
 
-    slice_ind = 17
+    slice_ind = 16
     for subject in ["SQ-struct-04-p3-low", "SQ-struct-04-p3-mid", "SQ-struct-04-p3-high"]:
         outfolder = f"{config['out_folder']}/images_for_figures/example_images_patterns/"
         os.makedirs(outfolder, exist_ok=True)
@@ -526,7 +526,7 @@ if config["test_set"] == "test-patterns":
 
         individual_imshow(
             t2star_maps["img_motion_free"][subject][ind].T[:, cut_img // 2:-cut_img // 2],
-            vmin=0, vmax=150, replace_nan=True,
+            vmin=20, vmax=100, replace_nan=True,
             save_path=f"{outfolder}t2star_gt_{subject}_slice_{slice_ind}.png",
             text_left="MAE / SSIM:", fontsize=16
         )
@@ -539,18 +539,28 @@ if config["test_set"] == "test-patterns":
                                    ["motion", "AllSlices-NoKeepCenter",
                                     "Proposed", "hrqr"],
                                    axs):
-            mae = metrics["mae"][descr][subject][ind]
-            ssim = metrics["ssim"][descr][subject][ind]
+            mae = metrics["mae"][descr][subject][cut_ind]
+            ssim = metrics["ssim"][descr][subject][cut_ind]
             text = f"{mae:.1f} / {ssim:.2f}"
-            add_imshow_axis(ax, t2star_maps[descr][subject][ind].T[:,
+            add_imshow_axis(ax, t2star_maps_reg[descr][subject][cut_ind].T[:,
                                 cut_img // 2:-cut_img // 2],
-                            vmin=0, vmax=150, replace_nan=True,
+                            vmin=20, vmax=100, replace_nan=True,
                             text_mid=text, fontsize=16)
         plt.subplots_adjust(wspace=0, hspace=0, left=0, right=1, top=1,
                             bottom=0)
         plt.savefig(
             f"{outfolder}combined_t2star_{subject}_slice_{slice_ind}.png",
             dpi=400)
+        plt.show()
+
+        fig_cb, ax_cb = plt.subplots(
+            figsize=(2, 6))
+        norm = mcolors.Normalize(vmin=20, vmax=100)
+        cb = cbar.ColorbarBase(ax_cb, cmap='gray', norm=norm,
+                               orientation='vertical')
+        # fontsize of 16 for the yticks
+        cb.ax.tick_params(labelsize=40)
+        plt.tight_layout()
         plt.show()
 
         individual_imshow(data_dict["mask_gt"][subject][ind],
@@ -564,32 +574,36 @@ if config["test_set"] == "test-patterns":
 
 
 if config["test_set"] == "test":
-    for subject, slice_ind in zip(["SQ-struct-00", "SQ-struct-33"], [15, 15]):
+    for subject, slice_ind in zip(["SQ-struct-00", "SQ-struct-33"], [14, 15]):
         outfolder = f"{config['out_folder']}/images_for_figures/example_images//"
         os.makedirs(outfolder, exist_ok=True)
         ind = np.where(data_dict["slices_ind"][subject] == slice_ind)[0][0]
+        cut_ind = np.where(data_dict["slice_ind_cut"][subject] == slice_ind)[0][0]
         data_shape = np.array(
             t2star_maps["img_motion_free"][subject][ind].T.shape)
         cut_img = 10
         data_shape[1] -= cut_img
-        fig, axs = plt.subplots(1, 6, figsize=(
-        6 * 2, 2 * data_shape[0] / data_shape[1]))
+        fig, axs = plt.subplots(1, 7, figsize=(
+            7 * 2, 2 * data_shape[0] / data_shape[1]))
         for descr, save, ax in zip(["img_motion", "img_orba", "img_sld",
+                                    "AllSlices-NoKeepCenter",
                                     "Proposed", "img_hrqr"],
-                                   ["motion", "orba", "sld", "Proposed",
+                                   ["motion", "orba", "sld",
+                                    "AllSlices-NoKeepCenter", "Proposed",
                                     "hrqr"],
                                    axs[:-1]):
-            mae = metrics["mae"][descr][subject][ind]
-            ssim = metrics["ssim"][descr][subject][ind]
+            mae = metrics["mae"][descr][subject][cut_ind]
+            ssim = metrics["ssim"][descr][subject][cut_ind]
             text = f"{mae:.1f} / {ssim:.2f}"
             add_imshow_axis(ax,
-                            t2star_maps[descr][subject][ind].T[:, cut_img // 2:-cut_img // 2],
-                            vmin=0, vmax=150, replace_nan=True,
+                            t2star_maps_reg[descr][subject][cut_ind].T[:,
+                            cut_img // 2:-cut_img // 2],
+                            vmin=20, vmax=100, replace_nan=True,
                             text_mid=text, fontsize=16)
         add_imshow_axis(axs[-1],
                         t2star_maps["img_motion_free"][subject][ind].T[:,
                         cut_img // 2:-cut_img // 2],
-                        vmin=0, vmax=150, replace_nan=True,
+                        vmin=20, vmax=100, replace_nan=True,
                         text_mid="MAE / SSIM", fontsize=16)
         plt.subplots_adjust(wspace=0, hspace=0, left=0, right=1, top=1,
                             bottom=0)
@@ -603,6 +617,9 @@ if config["test_set"] == "test":
                               save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png")
         individual_imshow(data_dict["mask_phimo"]["Proposed"][subject][ind],
                           save_path=f"{outfolder}mask_phimo_Proposed_{subject}"
+                                    f"_slice_{slice_ind}.png")
+        individual_imshow(data_dict["mask_phimo"]["AllSlices-NoKeepCenter"][subject][ind],
+                          save_path=f"{outfolder}mask_phimo_AllSlices-NoKeepCenter_{subject}"
                                     f"_slice_{slice_ind}.png")
         individual_imshow(data_dict["mask_orba"][subject][ind],
                           save_path=f"{outfolder}mask_orba_{subject}"
@@ -614,33 +631,36 @@ if config["test_set"] == "test":
 
 
 if config["test_set"] == "test-extreme":
-    for subject, slice_ind in zip(["SQ-struct-02"], [15, 15]):
+    for subject, slice_ind in zip(["SQ-struct-02"], [14]):
         outfolder = (f"{config['out_folder']}/images_for_figures/"
                      f"example_images_extreme/")
         os.makedirs(outfolder, exist_ok=True)
         ind = np.where(data_dict["slices_ind"][subject] == slice_ind)[0][0]
+        cut_ind = np.where(data_dict["slice_ind_cut"][subject] == slice_ind)[0][0]
         data_shape = np.array(
             t2star_maps["img_motion_free"][subject][ind].T.shape)
         cut_img = 10
         data_shape[1] -= cut_img
-        fig, axs = plt.subplots(1, 6, figsize=(
-        6 * 2, 2 * data_shape[0] / data_shape[1]))
+        fig, axs = plt.subplots(1, 7, figsize=(
+        7 * 2, 2 * data_shape[0] / data_shape[1]))
         for descr, save, ax in zip(["img_motion", "img_orba", "img_sld",
-                                    "Proposed", "img_hrqr"],
-                                   ["motion", "orba", "sld", "Proposed",
+                                    "AllSlices-NoKeepCenter", "Proposed",
+                                    "img_hrqr"],
+                                   ["motion", "orba", "sld",
+                                    "AllSlices-NoKeepCenter", "Proposed",
                                     "hrqr"],
                                    axs[0:-1]):
-            mae = metrics["mae"][descr][subject][ind]
-            ssim = metrics["ssim"][descr][subject][ind]
+            mae = metrics["mae"][descr][subject][cut_ind]
+            ssim = metrics["ssim"][descr][subject][cut_ind]
             text = f"{mae:.1f} / {ssim:.2f}"
             add_imshow_axis(ax,
-                            t2star_maps[descr][subject][ind].T[:, cut_img // 2:-cut_img // 2],
-                            vmin=0, vmax=150, replace_nan=True,
+                            t2star_maps_reg[descr][subject][cut_ind].T[:, cut_img // 2:-cut_img // 2],
+                            vmin=20, vmax=100, replace_nan=True,
                             text_mid=text, fontsize=16)
         add_imshow_axis(axs[-1],
                         t2star_maps["img_motion_free"][subject][ind].T[:,
                         cut_img // 2:-cut_img // 2],
-                        vmin=0, vmax=150, replace_nan=True,
+                        vmin=20, vmax=100, replace_nan=True,
                         text_mid="MAE / SSIM", fontsize=16)
         plt.subplots_adjust(wspace=0, hspace=0, left=0, right=1, top=1,
                             bottom=0)
@@ -654,6 +674,9 @@ if config["test_set"] == "test-extreme":
                               save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png")
         individual_imshow(data_dict["mask_phimo"]["Proposed"][subject][ind],
                           save_path=f"{outfolder}mask_phimo_Proposed_{subject}"
+                                    f"_slice_{slice_ind}.png")
+        individual_imshow(data_dict["mask_phimo"]["AllSlices-NoKeepCenter"][subject][ind],
+                          save_path=f"{outfolder}mask_phimo_AllSlices-NoKeepCenter_{subject}"
                                     f"_slice_{slice_ind}.png")
         individual_imshow(data_dict["mask_orba"][subject][ind],
                           save_path=f"{outfolder}mask_orba_{subject}"

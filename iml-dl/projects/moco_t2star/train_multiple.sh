@@ -20,22 +20,19 @@ cd $code_directory/iml-dl/
 # Set the output filename with the timestamp
 output_filename="$code_directory/iml-dl/results/moco_t2star/logs/log_config_${timestamp}.txt"
 script_path="./projects/moco_t2star/preprocessing/create_configs.py"
-base_config_path="./projects/moco_t2star/configs/mrm/real_motion/config_test_base_KeepCenter-EvenOdd.yaml"
-config_directory="./projects/moco_t2star/configs/individual_configs_${timestamp}/"
-
-# choose the set of configurations to create
+base_config_path="./projects/moco_t2star/configs/mrm/real_motion/config_test_base_NoKeepCenter-AllSlices.yaml"
 #set_descr="test"
 #set_descr="test-patterns"
 #set_descr="test-simulated"
-#set_descr="test-motionfree"
-set_descr="test-extreme"
+set_descr="test-motionfree"
+#set_descr="test-extreme"
 
 # Run the Python script to create config files
 python -u "$script_path" --base_config_path "$base_config_path" --output_directory "$config_directory" --set "$set_descr" > "$output_filename" &
 wait
 
 # Iterate over the individual config files
-max_jobs=1
+max_jobs=2
 for config_file in "$config_directory"/*.yaml
 do
     # Set the output filename with the timestamp

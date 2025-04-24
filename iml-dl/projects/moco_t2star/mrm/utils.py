@@ -291,14 +291,35 @@ def calculate_line_detection_metrics(data_dict, subject, mask_type, exp_name=Non
             + np.sum(np.logical_and(data < 0.5, data_gt == 0), axis=1)
         ) / data_gt.shape[1]
 
+        metrics["accuracy_lowfreq"] = np.mean(
+            np.sum(np.logical_and(data[:, 31:61] > 0.5, data_gt[:, 31:61] == 1),
+                   axis=1)
+            + np.sum(np.logical_and(data[:, 31:61] < 0.5, data_gt[:, 31:61] == 0),
+                     axis=1)
+        ) / data_gt[:, 31:61].shape[1]
+        metrics["accuracy_medfreq"] = np.mean(
+            np.sum(np.logical_and(data[:, np.r_[16:31, 61:76]] > 0.5,
+                                  data_gt[:, np.r_[16:31, 61:76]] == 1),
+                   axis=1)
+            + np.sum(np.logical_and(data[:, np.r_[16:31, 61:76]] < 0.5,
+                                    data_gt[:, np.r_[16:31, 61:76]] == 0),
+                     axis=1)
+        ) / data_gt[:, np.r_[16:31, 61:76]].shape[1]
+        metrics["accuracy_highfreq"] = np.mean(
+            np.sum(np.logical_and(data[:, np.r_[0:16, 76:92]] > 0.5,
+                                  data_gt[:, np.r_[0:16, 76:92]] == 1),
+                   axis=1)
+            + np.sum(np.logical_and(data[:, np.r_[0:16, 76:92]] < 0.5,
+                                    data_gt[:, np.r_[0:16, 76:92]] == 0),
+                     axis=1)
+        ) / data_gt[:, np.r_[0:16, 76:92]].shape[1]
+
         start_idx = 3*data_gt.shape[1] // 8
         end_idx = 5 * data_gt.shape[1] // 8
-
         (metrics["precision_central"],
          metrics["recall_central"]) = calculate_precision_recall_threshold(
             data[:, start_idx:end_idx], data_gt[:, start_idx:end_idx]
         )
-
         (metrics["precision_peripheral"],
          metrics["recall_peripheral"]) = calculate_precision_recall_threshold(
             np.hstack((data[:, :start_idx], data[:, end_idx:])),
@@ -315,12 +336,14 @@ def update_line_detection_metrics(line_detection_metrics, data_dict, subjects,
             for subject in subjects:
                 metrics = calculate_line_detection_metrics(data_dict, subject, mask_type, exp_name)
                 for key, value in metrics.items():
-                    line_detection_metrics[key][exp_name][subject] = value
+                    if key in line_detection_metrics:
+                        line_detection_metrics[key][exp_name][subject] = value
     else:
         for subject in subjects:
             metrics = calculate_line_detection_metrics(data_dict, subject, mask_type)
             for key, value in metrics.items():
-                line_detection_metrics[key][mask_type.replace("mask", "img")][subject] = value
+                if key in line_detection_metrics:
+                    line_detection_metrics[key][mask_type.replace("mask", "img")][subject] = value
 
 
 def calculate_precision_recall(data_dict, subjects, mask_type, exp_name=None):

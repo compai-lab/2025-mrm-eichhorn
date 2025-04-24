@@ -382,19 +382,20 @@ for subject, folder in zip(["SQ-struct-44-sim00", "SQ-struct-48-sim00"],
     data_shape = np.array(t2star_maps["img_motion_free"][subject][ind].T.shape)
     cut_right = 10
     data_shape[1] -= cut_right
-    fig, axs = plt.subplots(1, 6, figsize=(6*2, 2*data_shape[0]/data_shape[1]))
+    fig, axs = plt.subplots(1, 7, figsize=(7*2, 2*data_shape[0]/data_shape[1]))
     for descr, save, ax in zip(["img_motion", "img_orba", "img_sld",
-                                "Proposed", "img_hrqr"],
-                               ["motion", "orba", "sld", "Proposed", "hrqr"],
+                                "AllSlices-NoKeepCenter", "Proposed", "img_hrqr"],
+                               ["motion", "orba", "sld",
+                                "AllSlices-NoKeepCenter", "Proposed", "hrqr"],
                                axs[0:-1]):
         mae = metrics["mae"][descr][subject][ind]
         ssim = metrics["ssim"][descr][subject][ind]
         text = f"{mae:.1f} / {ssim:.2f}"
         add_imshow_axis(ax, t2star_maps[descr][subject][ind].T[:, cut_right//2:-cut_right//2],
-                        vmin=0, vmax=150, replace_nan=True,
+                        vmin=20, vmax=100, replace_nan=True,
                         text_mid=text, fontsize=16)
     add_imshow_axis(axs[-1], t2star_maps["img_motion_free"][subject][ind].T[:, cut_right//2:-cut_right//2],
-                    vmin=0, vmax=150, replace_nan=True, text_mid="MAE / SSIM",
+                    vmin=20, vmax=100, replace_nan=True, text_mid="MAE / SSIM",
                     fontsize=16)
     plt.subplots_adjust(wspace=0, hspace=0, left=0, right=1, top=1, bottom=0)
     plt.savefig(f"{outfolder}combined_t2star_{subject}_slice_{slice_ind}.png", dpi=400)
@@ -404,6 +405,9 @@ for subject, folder in zip(["SQ-struct-44-sim00", "SQ-struct-48-sim00"],
                       save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png")
     individual_imshow(data_dict["mask_phimo"]["Proposed"][subject][ind],
                       save_path=f"{outfolder}mask_phimo_Proposed_{subject}"
+                                f"_slice_{slice_ind}.png")
+    individual_imshow(data_dict["mask_phimo"]["AllSlices-NoKeepCenter"][subject][ind],
+                      save_path=f"{outfolder}mask_phimo_AllSlices-NoKeepCenter_{subject}"
                                 f"_slice_{slice_ind}.png")
     individual_imshow(data_dict["mask_orba"][subject][ind],
                       save_path=f"{outfolder}mask_orba_{subject}"

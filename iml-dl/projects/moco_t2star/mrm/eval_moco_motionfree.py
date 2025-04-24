@@ -165,13 +165,13 @@ latex_code = r"""
 \textbf{} & \textbf{ORBA} & \textbf{SLD} & \textbf{PHIMO (Proposed)} \\ \midrule
 """
 latex_code += "\\textbf{Average value of exclusion masks}          & "
-latex_code += " & ".join([f"${np.mean(mean_mask[key]):.3f} \\pm {np.std(mean_mask[key]):.3f}$" for key in ['img_orba', 'img_sld', 'Proposed']]) + r" \\" + "\n"
-latex_code += "\\textbf{Value range}         & "
-latex_code += " & ".join([f"[{np.min(mean_mask[key]):.3f}, {np.max(mean_mask[key]):.3f}]" for key in ['img_orba', 'img_sld', 'Proposed']]) + r" \\ \midrule" + "\n"
+latex_code += " & ".join([f"${np.mean(mean_mask[key]):.3f} \\pm {np.std(mean_mask[key]):.3f}$" for key in ['img_orba', 'img_sld', 'AllSlices-NoKeepCenter', 'Proposed']]) + r" \\" + "\n"
+# latex_code += "\\textbf{Value range}         & "
+# latex_code += " & ".join([f"[{np.min(mean_mask[key]):.3f}, {np.max(mean_mask[key]):.3f}]" for key in ['img_orba', 'img_sld', 'AllSlices-NoKeepCenter', 'Proposed']]) + r" \\ \midrule" + "\n"
 latex_code += "\\textbf{Fraction of excluded lines ($<$0.5)} & "
-latex_code += " & ".join([f"${np.mean(ratio_excluded_lines[key]):.2f} \\pm {np.std(ratio_excluded_lines[key]):.2f}$" for key in ['img_orba', 'img_sld', 'Proposed']]) + r" \\" + "\n"
-latex_code += "\\textbf{Value range: } & "
-latex_code += " & ".join([f"[{np.min(ratio_excluded_lines[key]):.2f}, {np.max(ratio_excluded_lines[key]):.2f}]" for key in ['img_orba', 'img_sld', 'Proposed']]) + r" \\" + "\n"
+latex_code += " & ".join([f"${np.mean(ratio_excluded_lines[key]):.2f} \\pm {np.std(ratio_excluded_lines[key]):.2f}$" for key in ['img_orba', 'img_sld', 'AllSlices-NoKeepCenter', 'Proposed']]) + r" \\" + "\n"
+# latex_code += "\\textbf{Value range: } & "
+# latex_code += " & ".join([f"[{np.min(ratio_excluded_lines[key]):.2f}, {np.max(ratio_excluded_lines[key]):.2f}]" for key in ['img_orba', 'img_sld', 'AllSlices-NoKeepCenter', 'Proposed']]) + r" \\" + "\n"
 latex_code += r"""
 \bottomrule
 \end{tabular}
@@ -192,19 +192,23 @@ for subject in ["SQ-struct-00-motionfree", "SQ-struct-46-motionfree"]:
     data_shape = np.array(t2star_maps["img_motion"][subject][ind].T.shape)
     cut_right = 10
     data_shape[1] -= cut_right
-    fig, axs = plt.subplots(1, 5, figsize=(5*2, 2*data_shape[0]/data_shape[1]))
+    fig, axs = plt.subplots(1, 6, figsize=(6*2, 2*data_shape[0]/data_shape[1]))
     for descr, save, ax in zip(["img_motion", "img_orba", "img_sld",
-                                "Proposed", "img_hrqr"],
-                               ["motion", "orba", "sld", "Proposed", "hrqr"],
+                                "AllSlices-NoKeepCenter", "Proposed", "img_hrqr"],
+                               ["motion", "orba", "sld","AllSlices-NoKeepCenter",
+                                "Proposed", "hrqr"],
                                axs):
         add_imshow_axis(ax, t2star_maps[descr][subject][ind].T[:, cut_right//2:-cut_right//2],
-                        vmin=0, vmax=150, replace_nan=True)
+                        vmin=20, vmax=100, replace_nan=True)
     plt.subplots_adjust(wspace=0, hspace=0, left=0, right=1, top=1, bottom=0)
     plt.savefig(f"{outfolder}combined_t2star_{subject}_slice_{slice_ind}.png", dpi=400)
     plt.show()
 
     individual_imshow(data_dict["mask_phimo"]["Proposed"][subject][ind],
                       save_path=f"{outfolder}mask_phimo_Proposed_{subject}"
+                                f"_slice_{slice_ind}.png", vmin=0, vmax=1)
+    individual_imshow(data_dict["mask_phimo"]["AllSlices-NoKeepCenter"][subject][ind],
+                      save_path=f"{outfolder}mask_phimo_AllSlices-NoKeepCenter_{subject}"
                                 f"_slice_{slice_ind}.png", vmin=0, vmax=1)
     individual_imshow(data_dict["mask_orba"][subject][ind],
                       save_path=f"{outfolder}mask_orba_{subject}"

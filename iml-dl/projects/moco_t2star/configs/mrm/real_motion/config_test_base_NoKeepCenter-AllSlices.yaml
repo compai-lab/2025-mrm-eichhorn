@@ -35,8 +35,8 @@ data_loader: &data_loader
     args:
       batch_size: *tbatch_size
       data_dir:
-        train: './data/links_to_data/recon_test-extreme_motion/'   #test-patterns
-        test: './data/links_to_data/recon_test-extreme_motion/'   #test-patterns
+        train: './data/links_to_data/recon_test-motionfree_motion/'   #test-patterns
+        test: './data/links_to_data/recon_test-motionfree_motion/'   #test-patterns
       only_brainmask_slices: True
       bm_thr: 0.2
       normalize: "percentile_image"

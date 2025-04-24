@@ -130,6 +130,9 @@ configurations:
       Proposed:
         <<: *default_proposed
         id: group-2024-11-22_14-31-56   # insert group id of your trained models here
+      AllSlices-NoKeepCenter:
+        <<: *default_all_slices_no_keep_center
+        id: group-2025-03-19_09-26-18
     orba-settings:
       <<: *orba-settings
     sld-settings:
