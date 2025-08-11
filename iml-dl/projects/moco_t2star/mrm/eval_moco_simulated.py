@@ -212,7 +212,7 @@ for m_key in metric_keys:
 out_path = (f"{config['out_folder']}/images_for_figures/"
             f"image_quality_metrics_simulated/")
 os.makedirs(out_path, exist_ok=True)
-ylims = {'mae': 32, 'ssim': None, 'fsim': None, 'lpips': None}
+ylims = {'mae': [0, 15], 'ssim': [0.5, 1.0], 'fsim': [0.9, 1.0], 'lpips': [0, 0.12]}
 plot_violin_iq_metrics(metrics_merged, img_keys,
                        statistical_tests, p_value_threshold=0.001,
                        save_individual_plots=True, save_path=out_path,
@@ -223,6 +223,24 @@ for i_key in img_keys:
     if np.amax(tmp) > 32:
         print(i_key, "- MAE values larger than 32:")
         print(tmp[tmp>32])
+
+# print maximum and minimum values of the metrics over all images:
+for m_key in metric_keys:
+    max_val = 0
+    for i_key in img_keys:
+        tmp = metrics_merged[m_key]["all_simulated"][i_key]
+        if np.amax(tmp) > max_val:
+            max_val = np.amax(tmp)
+    print(f"Maximum {m_key} value over all images: {max_val:.2f}")
+
+
+    min_val = np.inf
+    for i_key in img_keys:
+        tmp = metrics_merged[m_key]["all_simulated"][i_key]
+        if np.amin(tmp) < min_val:
+            min_val = np.amin(tmp)
+    print(f"Minimum {m_key} value over all images: {min_val:.2f}")
+    print("#####")
 
 
 
@@ -316,49 +334,12 @@ plot_violin_line_det_metrics(line_detection_metrics,
                              save_path=out_path+"mae_masks.png")
 plot_pr_curves(precision_recall, exps, save_path=out_path+"pr_curves.png",
                positive_prevalence=positive_prevalence)
-# plot_precision_recall_kspace_loc(line_detection_metrics, exps, subjects,
-#                                  save_path=out_path+"XXX_kspace_loc.png",
-#                                  statistical_tests=statistical_tests_ld,
-#                                  p_value_threshold=0.001)
-# plot_class_differences(deviations, exps,
-#                        save_path=out_path+"class_differences_abs.png", mode="abs")
-# plot_class_differences(deviations, exps,
-#                        save_path=out_path+"class_differences_rel.png",
-#                        mode="rel")
-# plot_violin_line_det_metrics(line_detection_metrics,
-#                              exps, subjects, statistical_tests_ld,
-#                              metric_type="correctly_excluded",
-#                              p_value_threshold=0.001,
-#                              save_path=out_path+"corr_excluded.png")
 
 
 # look at distribution over slices:
 plot_line_det_metrics(line_detection_metrics, data_dict["slices_ind"],
                       ['Proposed', 'AllSlices'],
                       subjects, "accuracy", split_by_level=False)
-
-
-
-subject = "SQ-struct-44-sim00"
-
-for slice_ind in [4, 14, 24]:
-    ind = np.where(data_dict["slices_ind"][subject] == slice_ind)[0][0]
-    outfolder = f"{config['out_folder']}/images_for_figures/line_det_simulated/"
-    os.makedirs(outfolder, exist_ok=True)
-    individual_imshow(data_dict["mask_gt"][subject][ind],
-                      save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png")
-    individual_imshow(data_dict["mask_phimo"]["Proposed"][subject][ind],
-                      save_path=f"{outfolder}mask_phimo_Proposed_{subject}"
-                                f"_slice_{slice_ind}.png")
-    individual_imshow(data_dict["mask_phimo"]["AllSlices"][subject][ind],
-                      save_path=f"{outfolder}mask_phimo_AllSlices_{subject}"
-                                f"_slice_{slice_ind}.png")
-    individual_imshow(data_dict["mask_orba"][subject][ind],
-                      save_path=f"{outfolder}mask_orba_{subject}"
-                                f"_slice_{slice_ind}.png")
-    individual_imshow(data_dict["mask_sld_thr"][subject][ind],
-                      save_path=f"{outfolder}mask_sld_{subject}"
-                                f"_slice_{slice_ind}.png")
 
 
 # Look for subject with good accuracy and bad acuracy:
@@ -373,15 +354,18 @@ for subject in subjects:
 print("#####")
 
 slice_ind = 17
-for subject, folder in zip(["SQ-struct-44-sim00", "SQ-struct-48-sim00"],
-                           ["high_accuracy", "low_accuracy"]):
+for subject, folder, point in zip(["SQ-struct-44-sim00", "SQ-struct-48-sim00"],
+                                  ["high_accuracy", "low_accuracy"],
+                                  [[27, 20], [75, 19]]):
     outfolder = f"{config['out_folder']}/images_for_figures/example_images_simulated/{folder}/"
     os.makedirs(outfolder, exist_ok=True)
     ind = np.where(data_dict["slices_ind"][subject] == slice_ind)[0][0]
-    print(subject, line_detection_metrics["accuracy"]["Proposed"][subject][ind])
+    print("Accuracy", subject,
+          line_detection_metrics["accuracy"]["Proposed"][subject][ind])
     data_shape = np.array(t2star_maps["img_motion_free"][subject][ind].T.shape)
     cut_right = 10
     data_shape[1] -= cut_right
+    box_params = {'xy': (point[1], point[0]), 'width': 30, 'height': 15}
     fig, axs = plt.subplots(1, 7, figsize=(7*2, 2*data_shape[0]/data_shape[1]))
     for descr, save, ax in zip(["img_motion", "img_orba", "img_sld",
                                 "AllSlices-NoKeepCenter", "Proposed", "img_hrqr"],
@@ -393,28 +377,65 @@ for subject, folder in zip(["SQ-struct-44-sim00", "SQ-struct-48-sim00"],
         text = f"{mae:.1f} / {ssim:.2f}"
         add_imshow_axis(ax, t2star_maps[descr][subject][ind].T[:, cut_right//2:-cut_right//2],
                         vmin=20, vmax=100, replace_nan=True,
-                        text_mid=text, fontsize=16)
+                        text_mid=text, fontsize=16, box_params=box_params)
     add_imshow_axis(axs[-1], t2star_maps["img_motion_free"][subject][ind].T[:, cut_right//2:-cut_right//2],
                     vmin=20, vmax=100, replace_nan=True, text_mid="MAE / SSIM",
-                    fontsize=16)
+                    fontsize=16, box_params=box_params)
     plt.subplots_adjust(wspace=0, hspace=0, left=0, right=1, top=1, bottom=0)
     plt.savefig(f"{outfolder}combined_t2star_{subject}_slice_{slice_ind}.png", dpi=400)
     plt.show()
 
+    # plot zoom-ins
+    fig, axs = plt.subplots(1, 7, figsize=(
+        7 * 2, 1))
+    for descr, save, ax in zip(["img_motion", "img_orba", "img_sld",
+                                "AllSlices-NoKeepCenter",
+                                "Proposed", "img_hrqr"],
+                               ["motion", "orba", "sld",
+                                "AllSlices-NoKeepCenter", "Proposed",
+                                "hrqr"],
+                               axs[:-1]):
+        data = t2star_maps[descr][subject][ind].T[:, cut_right//2:-cut_right//2]
+        add_imshow_axis(ax,
+                        data[point[0]:point[0] + 15, point[1]:point[1] + 30],
+                        vmin=20, vmax=100, replace_nan=True)
+    data = t2star_maps["img_motion_free"][subject][ind].T[:, cut_right//2:-cut_right//2]
+    add_imshow_axis(axs[-1],
+                    data[point[0]:point[0] + 15, point[1]:point[1] + 30],
+                    vmin=20, vmax=100, replace_nan=True)
+    plt.subplots_adjust(wspace=0.07, hspace=0.06, left=0.01, right=0.99, top=1,
+                        bottom=0)
+    plt.savefig(
+        f"{outfolder}combined_t2star_zooms_{subject}_slice_{slice_ind}.png",
+        dpi=400)
+    plt.show()
+
     individual_imshow(data_dict["mask_gt"][subject][ind],
-                      save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png")
+                      save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png",
+                      vmin=0, vmax=1)
     individual_imshow(data_dict["mask_phimo"]["Proposed"][subject][ind],
                       save_path=f"{outfolder}mask_phimo_Proposed_{subject}"
-                                f"_slice_{slice_ind}.png")
+                                f"_slice_{slice_ind}.png",
+                      vmin=0, vmax=1)
     individual_imshow(data_dict["mask_phimo"]["AllSlices-NoKeepCenter"][subject][ind],
                       save_path=f"{outfolder}mask_phimo_AllSlices-NoKeepCenter_{subject}"
-                                f"_slice_{slice_ind}.png")
+                                f"_slice_{slice_ind}.png",
+                      vmin=0, vmax=1)
     individual_imshow(data_dict["mask_orba"][subject][ind],
                       save_path=f"{outfolder}mask_orba_{subject}"
-                                f"_slice_{slice_ind}.png")
+                                f"_slice_{slice_ind}.png",
+                      vmin=0, vmax=1)
     individual_imshow(data_dict["mask_sld_thr"][subject][ind],
                       save_path=f"{outfolder}mask_sld_{subject}"
-                                f"_slice_{slice_ind}.png")
+                                f"_slice_{slice_ind}.png",
+                      vmin=0, vmax=1)
+
+    print(f"Subject {subject}")
+    print(f"GT mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_gt'][subject][ind])}")
+    print(f"Proposed mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_phimo']['Proposed'][subject][ind])}")
+    print(f"AllSlices mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_phimo']['AllSlices-NoKeepCenter'][subject][ind])}")
+    print(f"SLD mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_sld_thr'][subject][ind])}")
+    print(f"OR-BA mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_orba'][subject][ind])}")
 
 
 

@@ -207,13 +207,16 @@ for slice_ind in [4, 14, 24]:
     outfolder = f"{config['out_folder']}/images_for_figures/validation/line_det/"
     os.makedirs(outfolder, exist_ok=True)
     individual_imshow(data_dict["mask_gt"][subject][ind],
-                      save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png")
+                      save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png",
+                      vmin=0, vmax=1)
     individual_imshow(data_dict["mask_phimo"]["Proposed"][subject][ind],
                       save_path=f"{outfolder}mask_phimo_Proposed_{subject}"
-                                f"_slice_{slice_ind}.png")
+                                f"_slice_{slice_ind}.png",
+                      vmin=0, vmax=1)
     individual_imshow(data_dict["mask_phimo"]["AllSlices"][subject][ind],
                       save_path=f"{outfolder}mask_phimo_AllSlices_{subject}"
-                                f"_slice_{slice_ind}.png")
+                                f"_slice_{slice_ind}.png",
+                      vmin=0, vmax=1)
 
 subject = "SQ-struct-04-p2-high"
 for slice_ind in [3, 13, 23]:
@@ -221,13 +224,16 @@ for slice_ind in [3, 13, 23]:
     outfolder = f"{config['out_folder']}/images_for_figures/validation/line_det/"
     os.makedirs(outfolder, exist_ok=True)
     individual_imshow(data_dict["mask_gt"][subject][ind],
-                      save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png")
+                      save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png",
+                      vmin=0, vmax=1)
     individual_imshow(data_dict["mask_phimo"]["Proposed"][subject][ind],
                       save_path=f"{outfolder}mask_phimo_Proposed_{subject}"
-                                f"_slice_{slice_ind}.png")
+                                f"_slice_{slice_ind}.png",
+                      vmin=0, vmax=1)
     individual_imshow(data_dict["mask_phimo"]["AllSlices"][subject][ind],
                       save_path=f"{outfolder}mask_phimo_AllSlices_{subject}"
-                                f"_slice_{slice_ind}.png")
+                                f"_slice_{slice_ind}.png",
+                      vmin=0, vmax=1)
 
 
 """2a. Plot Line detection metrics for different k-space regions: """

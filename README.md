@@ -1,8 +1,8 @@
-# PHIMO: Motion-Robust T2* Quantification from Gradient Echo MRI with Physics-Informed Deep Learning
+# PHIMO+: Motion-Robust T2* Quantification from Low-Resolution Gradient Echo MRI with Physics-Informed Deep Learning
 
 **Hannah Eichhorn**, Veronika Spieker, Kerstin Hammernik, Elisa Saks, Lina Felsner, Kilian Weiss, Christine Preibisch, Julia A. Schnabel
 
-Preprint available at: [arXiv:2502.17209](https://arxiv.org/abs/2502.17209)
+**Accepted at Magnetic Resonance in Medicine** | Preprint available at: [arXiv:2502.17209](https://arxiv.org/abs/2502.17209)
 
 **Data-Consistent Image Reconstruction | Self-Supervised Optimization | Motion Correction | 
 Motion Detection | Motion Simulation**
@@ -15,11 +15,12 @@ magnetic field inhomogeneities, which are influenced by motion and might
 cause signal loss. Thus, motion correction is crucial to obtain high-quality
 T2* maps.
 <br>
-_Methods_: We extend our previously introduced learning-based physics-
-informed motion correction method, PHIMO, by utilizing acquisition
-knowledge to enhance the reconstruction performance for challenging
-motion patterns and increase PHIMO’s robustness to varying strengths of
-magnetic field inhomogeneities across the brain. We perform comprehensive 
+_Methods_: We extend PHIMO, our previously introduced learning-based
+physics-informed motion correction method for low-resolution T2* mapping.
+Our extended version, PHIMO+, utilizes acquisition knowledge to enhance the 
+reconstruction performance for challenging motion patterns and increase 
+PHIMO’s robustness to varying strengths of magnetic field inhomogeneities 
+across the brain. We perform comprehensive 
 evaluations regarding motion detection accuracy and image quality
 for data with simulated and real motion.
 <br>
@@ -49,13 +50,13 @@ If you use this code, please cite our arXiv preprint:
 }
 ```
 
-## Illustration of PHIMO:
+## Illustration of PHIMO+:
 <p align="center">
-<img src="PHIMO.png" alt="PHIMO" width="800">
+<img src="PHIMO.png" alt="PHIMO+" width="800">
 </p>
 
 <p style="text-align: justify;">
-Illustration of PHIMO. 
+Illustration of PHIMO+. 
 (A) Subject-specific MoCo of *motion-corrupted* data: optimizing one exclusion mask, $\Omega$, for even and one odd slices. 
 (B) Empirical correlation coefficient as physics-informed loss for the self-supervised optimization of the exclusion masks in (A).
 (C) Training an unrolled reconstruction network with randomly undersampled *motion-free* multi-echo data. 

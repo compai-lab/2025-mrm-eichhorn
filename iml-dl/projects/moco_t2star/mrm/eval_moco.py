@@ -355,6 +355,10 @@ for m_key in metric_keys:
 if config["test_set"] == "test":
     out_path = f"{config['out_folder']}/images_for_figures/image_quality_metrics/"
     os.makedirs(out_path, exist_ok=True)
+    ylims = {'mae': [0, 15],
+             'ssim': [0.5, 1.0],
+             'fsim': [0.9, 1.0],
+             'lpips': [0, 0.12]}
     plot_violin_iq_metrics(metrics_merged, img_keys,
                            statistical_tests, p_value_threshold=0.001,
                            save_individual_plots=True, save_path=out_path)
@@ -471,21 +475,6 @@ if config["test_set"] == "test":
         plot_pr_curves(precision_recall, exps,
                        save_path=out_path + "pr_curves.png",
                        positive_prevalence=positive_prevalence)
-        # plot_precision_recall_kspace_loc(line_detection_metrics, exps, subjects_,
-        #                                  save_path=out_path + "XXX_kspace_loc.png",
-        #                                  statistical_tests=statistical_tests_ld,
-        #                                  p_value_threshold=0.001)
-        # plot_violin_line_det_metrics(line_detection_metrics,
-        #                              exps, subjects_, statistical_tests_ld,
-        #                              metric_type="correctly_excluded",
-        #                              p_value_threshold=0.001,
-        #                              save_path=out_path + "corr_excluded.png")
-        # plot_class_differences(deviations, exps,
-        #                        save_path=out_path + "class_differences_abs.png",
-        #                        mode="abs")
-        # plot_class_differences(deviations, exps,
-        #                        save_path=out_path + "class_differences_rel.png",
-        #                        mode="rel")
 
 
 """ 7. Evaluate the image quality qualitatively: """
@@ -494,27 +483,9 @@ subjects_ = subjects
 if config["test_set"] == "test-patterns":
     subject = "SQ-struct-04-p4-high"
 
-    for slice_ind in [4, 14, 24]:
-        ind = np.where(data_dict["slices_ind"][subject] == slice_ind)[0][0]
-        outfolder = f"{config['out_folder']}/images_for_figures/line_det/"
-        os.makedirs(outfolder, exist_ok=True)
-        individual_imshow(data_dict["mask_gt"][subject][ind],
-                          save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png")
-        individual_imshow(data_dict["mask_phimo"]["Proposed"][subject][ind],
-                          save_path=f"{outfolder}mask_phimo_Proposed_{subject}"
-                                    f"_slice_{slice_ind}.png")
-        individual_imshow(data_dict["mask_phimo"]["AllSlices"][subject][ind],
-                          save_path=f"{outfolder}mask_phimo_AllSlices_{subject}"
-                                    f"_slice_{slice_ind}.png")
-        individual_imshow(data_dict["mask_orba"][subject][ind],
-                          save_path=f"{outfolder}mask_orba_{subject}"
-                                    f"_slice_{slice_ind}.png")
-        individual_imshow(data_dict["mask_sld_thr"][subject][ind],
-                          save_path=f"{outfolder}mask_sld_{subject}"
-                                    f"_slice_{slice_ind}.png")
-
     slice_ind = 16
-    for subject in ["SQ-struct-04-p3-low", "SQ-struct-04-p3-mid", "SQ-struct-04-p3-high"]:
+    for subject, point in zip(["SQ-struct-04-p3-low", "SQ-struct-04-p3-mid", "SQ-struct-04-p3-high"],
+                              [[30, 20], [25, 40], [23, 18]]):
         outfolder = f"{config['out_folder']}/images_for_figures/example_images_patterns/"
         os.makedirs(outfolder, exist_ok=True)
 
@@ -524,12 +495,17 @@ if config["test_set"] == "test-patterns":
             t2star_maps["img_motion_free"][subject][ind].T.shape)
         cut_img = 10
 
+        box_params = {'xy': (point[1], point[0]), 'width': 30, 'height': 15}
         individual_imshow(
             t2star_maps["img_motion_free"][subject][ind].T[:, cut_img // 2:-cut_img // 2],
             vmin=20, vmax=100, replace_nan=True,
             save_path=f"{outfolder}t2star_gt_{subject}_slice_{slice_ind}.png",
             text_left="MAE / SSIM:", fontsize=16
         )
+        data = t2star_maps["img_motion_free"][subject][ind].T[:, cut_img // 2:-cut_img // 2]
+        individual_imshow(data[point[0]:point[0]+15, point[1]:point[1]+30],
+            vmin=20, vmax=100, replace_nan=True, pad=0.2,
+            save_path=f"{outfolder}t2star_gt_zoom_{subject}_slice_{slice_ind}.png")
 
         data_shape[1] -= cut_img
         fig, axs = plt.subplots(1, 4, figsize=(
@@ -545,11 +521,30 @@ if config["test_set"] == "test-patterns":
             add_imshow_axis(ax, t2star_maps_reg[descr][subject][cut_ind].T[:,
                                 cut_img // 2:-cut_img // 2],
                             vmin=20, vmax=100, replace_nan=True,
-                            text_mid=text, fontsize=16)
+                            text_mid=text, fontsize=16, box_params=box_params)
         plt.subplots_adjust(wspace=0, hspace=0, left=0, right=1, top=1,
                             bottom=0)
         plt.savefig(
             f"{outfolder}combined_t2star_{subject}_slice_{slice_ind}.png",
+            dpi=400)
+        plt.show()
+
+        # plot zoom-ins
+        fig, axs = plt.subplots(1, 4, figsize=(
+        4 * 2, 1))
+        for descr, save, ax in zip(["img_motion", "AllSlices-NoKeepCenter",
+                                    "Proposed", "img_hrqr"],
+                                   ["motion", "AllSlices-NoKeepCenter",
+                                    "Proposed", "hrqr"],
+                                   axs):
+            data = t2star_maps_reg[descr][subject][cut_ind].T[:,
+                                cut_img // 2:-cut_img // 2]
+            add_imshow_axis(ax, data[point[0]:point[0]+15, point[1]:point[1]+30],
+                            vmin=20, vmax=100, replace_nan=True)
+        plt.subplots_adjust(wspace=0.05, hspace=0.05, left=0.01, right=0.99, top=1,
+                    bottom=0)
+        plt.savefig(
+            f"{outfolder}combined_t2star_zooms_{subject}_slice_{slice_ind}.png",
             dpi=400)
         plt.show()
 
@@ -564,17 +559,26 @@ if config["test_set"] == "test-patterns":
         plt.show()
 
         individual_imshow(data_dict["mask_gt"][subject][ind],
-                          save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png")
+                          save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png",
+                          vmin=0, vmax=1)
         individual_imshow(data_dict["mask_phimo"]["Proposed"][subject][ind],
                           save_path=f"{outfolder}mask_phimo_Proposed_{subject}"
-                                    f"_slice_{slice_ind}.png")
+                                    f"_slice_{slice_ind}.png",
+                          vmin=0, vmax=1)
         individual_imshow(data_dict["mask_phimo"]["AllSlices-NoKeepCenter"][subject][ind],
                           save_path=f"{outfolder}mask_phimo_AllSlices-NoKeepCenter_"
-                                    f"{subject}_slice_{slice_ind}.png")
+                                    f"{subject}_slice_{slice_ind}.png",
+                          vmin=0, vmax=1)
+        print(f"Subject {subject}")
+        print(f"GT mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_gt'][subject][ind])}")
+        print(f"Proposed mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_phimo']['Proposed'][subject][ind])}")
+        print(f"AllSlices mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_phimo']['AllSlices-NoKeepCenter'][subject][ind])}")
+
 
 
 if config["test_set"] == "test":
-    for subject, slice_ind in zip(["SQ-struct-00", "SQ-struct-33"], [14, 15]):
+    for subject, slice_ind, point in zip(["SQ-struct-00", "SQ-struct-33"], [14, 15],
+                                         [[25, 40], [50, 40]]):
         outfolder = f"{config['out_folder']}/images_for_figures/example_images//"
         os.makedirs(outfolder, exist_ok=True)
         ind = np.where(data_dict["slices_ind"][subject] == slice_ind)[0][0]
@@ -583,6 +587,7 @@ if config["test_set"] == "test":
             t2star_maps["img_motion_free"][subject][ind].T.shape)
         cut_img = 10
         data_shape[1] -= cut_img
+        box_params = {'xy': (point[1], point[0]), 'width': 30, 'height': 15}
         fig, axs = plt.subplots(1, 7, figsize=(
             7 * 2, 2 * data_shape[0] / data_shape[1]))
         for descr, save, ax in zip(["img_motion", "img_orba", "img_sld",
@@ -599,12 +604,12 @@ if config["test_set"] == "test":
                             t2star_maps_reg[descr][subject][cut_ind].T[:,
                             cut_img // 2:-cut_img // 2],
                             vmin=20, vmax=100, replace_nan=True,
-                            text_mid=text, fontsize=16)
+                            text_mid=text, fontsize=16, box_params=box_params)
         add_imshow_axis(axs[-1],
                         t2star_maps["img_motion_free"][subject][ind].T[:,
                         cut_img // 2:-cut_img // 2],
                         vmin=20, vmax=100, replace_nan=True,
-                        text_mid="MAE / SSIM", fontsize=16)
+                        text_mid="MAE / SSIM", fontsize=16, box_params=box_params)
         plt.subplots_adjust(wspace=0, hspace=0, left=0, right=1, top=1,
                             bottom=0)
         plt.savefig(
@@ -612,26 +617,65 @@ if config["test_set"] == "test":
             dpi=400)
         plt.show()
 
+        # plot zoom-ins
+        fig, axs = plt.subplots(1, 7, figsize=(
+        7 * 2, 1))
+        for descr, save, ax in zip(["img_motion", "img_orba", "img_sld",
+                                    "AllSlices-NoKeepCenter",
+                                    "Proposed", "img_hrqr"],
+                                   ["motion", "orba", "sld",
+                                    "AllSlices-NoKeepCenter", "Proposed",
+                                    "hrqr"],
+                                   axs[:-1]):
+            data = t2star_maps_reg[descr][subject][cut_ind].T[:, cut_img // 2:-cut_img // 2]
+            add_imshow_axis(ax,
+                            data[point[0]:point[0]+15, point[1]:point[1]+30],
+                            vmin=20, vmax=100, replace_nan=True)
+        data = t2star_maps["img_motion_free"][subject][ind].T[:,
+                        cut_img // 2:-cut_img // 2]
+        add_imshow_axis(axs[-1],
+                        data[point[0]:point[0] + 15, point[1]:point[1] + 30],
+                        vmin=20, vmax=100, replace_nan=True)
+        plt.subplots_adjust(wspace=0.07, hspace=0.06, left=0.01, right=0.99, top=1,
+                    bottom=0)
+        plt.savefig(
+            f"{outfolder}combined_t2star_zooms_{subject}_slice_{slice_ind}.png",
+            dpi=400)
+        plt.show()
+
         if data_dict["mask_gt"][subject].shape[0] > 0:
             individual_imshow(data_dict["mask_gt"][subject][ind],
-                              save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png")
+                              save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png",
+                          vmin=0, vmax=1)
         individual_imshow(data_dict["mask_phimo"]["Proposed"][subject][ind],
                           save_path=f"{outfolder}mask_phimo_Proposed_{subject}"
-                                    f"_slice_{slice_ind}.png")
+                                    f"_slice_{slice_ind}.png",
+                          vmin=0, vmax=1)
         individual_imshow(data_dict["mask_phimo"]["AllSlices-NoKeepCenter"][subject][ind],
                           save_path=f"{outfolder}mask_phimo_AllSlices-NoKeepCenter_{subject}"
-                                    f"_slice_{slice_ind}.png")
+                                    f"_slice_{slice_ind}.png",
+                          vmin=0, vmax=1)
         individual_imshow(data_dict["mask_orba"][subject][ind],
                           save_path=f"{outfolder}mask_orba_{subject}"
-                                    f"_slice_{slice_ind}.png")
+                                    f"_slice_{slice_ind}.png",
+                          vmin=0, vmax=1)
         individual_imshow(data_dict["mask_sld_thr"][subject][ind],
                           save_path=f"{outfolder}mask_sld_{subject}"
-                                    f"_slice_{slice_ind}.png")
+                                    f"_slice_{slice_ind}.png",
+                          vmin=0, vmax=1)
+
+        print(f"Subject {subject}")
+        if data_dict["mask_gt"][subject].shape[0] > 0:
+            print(f"GT mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_gt'][subject][ind])}")
+        print(f"Proposed mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_phimo']['Proposed'][subject][ind])}")
+        print(f"AllSlices mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_phimo']['AllSlices-NoKeepCenter'][subject][ind])}")
+        print(f"SLD mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_sld_thr'][subject][ind])}")
+        print(f"OR-BA mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_orba'][subject][ind])}")
 
 
 
 if config["test_set"] == "test-extreme":
-    for subject, slice_ind in zip(["SQ-struct-02"], [14]):
+    for subject, slice_ind, point in zip(["SQ-struct-02"], [14], [[20, 35]]):
         outfolder = (f"{config['out_folder']}/images_for_figures/"
                      f"example_images_extreme/")
         os.makedirs(outfolder, exist_ok=True)
@@ -641,6 +685,7 @@ if config["test_set"] == "test-extreme":
             t2star_maps["img_motion_free"][subject][ind].T.shape)
         cut_img = 10
         data_shape[1] -= cut_img
+        box_params = {'xy': (point[1], point[0]), 'width': 30, 'height': 15}
         fig, axs = plt.subplots(1, 7, figsize=(
         7 * 2, 2 * data_shape[0] / data_shape[1]))
         for descr, save, ax in zip(["img_motion", "img_orba", "img_sld",
@@ -656,12 +701,12 @@ if config["test_set"] == "test-extreme":
             add_imshow_axis(ax,
                             t2star_maps_reg[descr][subject][cut_ind].T[:, cut_img // 2:-cut_img // 2],
                             vmin=20, vmax=100, replace_nan=True,
-                            text_mid=text, fontsize=16)
+                            text_mid=text, fontsize=16, box_params=box_params)
         add_imshow_axis(axs[-1],
                         t2star_maps["img_motion_free"][subject][ind].T[:,
                         cut_img // 2:-cut_img // 2],
                         vmin=20, vmax=100, replace_nan=True,
-                        text_mid="MAE / SSIM", fontsize=16)
+                        text_mid="MAE / SSIM", fontsize=16, box_params=box_params)
         plt.subplots_adjust(wspace=0, hspace=0, left=0, right=1, top=1,
                             bottom=0)
         plt.savefig(
@@ -669,94 +714,63 @@ if config["test_set"] == "test-extreme":
             dpi=400)
         plt.show()
 
+        # plot zoom-ins
+        fig, axs = plt.subplots(1, 7, figsize=(
+        7 * 2, 1))
+        for descr, save, ax in zip(["img_motion", "img_orba", "img_sld",
+                                    "AllSlices-NoKeepCenter",
+                                    "Proposed", "img_hrqr"],
+                                   ["motion", "orba", "sld",
+                                    "AllSlices-NoKeepCenter", "Proposed",
+                                    "hrqr"],
+                                   axs[:-1]):
+            data = t2star_maps_reg[descr][subject][cut_ind].T[:, cut_img // 2:-cut_img // 2]
+            add_imshow_axis(ax,
+                            data[point[0]:point[0]+15, point[1]:point[1]+30],
+                            vmin=20, vmax=100, replace_nan=True)
+        data = t2star_maps["img_motion_free"][subject][ind].T[:,
+                        cut_img // 2:-cut_img // 2]
+        add_imshow_axis(axs[-1],
+                        data[point[0]:point[0] + 15, point[1]:point[1] + 30],
+                        vmin=20, vmax=100, replace_nan=True)
+        plt.subplots_adjust(wspace=0.07, hspace=0.06, left=0.01, right=0.99, top=1,
+                    bottom=0)
+        plt.savefig(
+            f"{outfolder}combined_t2star_zooms_{subject}_slice_{slice_ind}.png",
+            dpi=400)
+        plt.show()
+
         if data_dict["mask_gt"][subject].shape[0] > 0:
             individual_imshow(data_dict["mask_gt"][subject][ind],
-                              save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png")
+                              save_path=f"{outfolder}mask_gt_{subject}_slice_{slice_ind}.png",
+                              vmin=0, vmax=1)
         individual_imshow(data_dict["mask_phimo"]["Proposed"][subject][ind],
                           save_path=f"{outfolder}mask_phimo_Proposed_{subject}"
-                                    f"_slice_{slice_ind}.png")
+                                    f"_slice_{slice_ind}.png",
+                              vmin=0, vmax=1)
         individual_imshow(data_dict["mask_phimo"]["AllSlices-NoKeepCenter"][subject][ind],
                           save_path=f"{outfolder}mask_phimo_AllSlices-NoKeepCenter_{subject}"
-                                    f"_slice_{slice_ind}.png")
+                                    f"_slice_{slice_ind}.png",
+                              vmin=0, vmax=1)
         individual_imshow(data_dict["mask_orba"][subject][ind],
                           save_path=f"{outfolder}mask_orba_{subject}"
-                                    f"_slice_{slice_ind}.png")
+                                    f"_slice_{slice_ind}.png",
+                              vmin=0, vmax=1)
         individual_imshow(data_dict["mask_sld_thr"][subject][ind],
                           save_path=f"{outfolder}mask_sld_{subject}"
-                                    f"_slice_{slice_ind}.png")
+                                    f"_slice_{slice_ind}.png",
+                              vmin=0, vmax=1)
 
         print("Excluded lines in k-space center (GT mask):",
               np.count_nonzero(data_dict['mask_gt'][subject][ind][92//2-10:92//2+10]==0))
 
-
-""" 9. Look at sub-region T2* accuracy: """
-if load_aal3:
-    img_keys = ['img_motion', 'img_orba', 'img_sld', 'AllSlices-NoKeepCenter',
-                'Proposed', 'img_hrqr', 'img_motion_free']
-    region_mean_t2star = {exp_name: {
-        i: [] for i in range(1, 171)
-    } for exp_name in img_keys}
-    region_std_t2star = {exp_name: {
-        i: [] for i in range(1, 171)
-    } for exp_name in img_keys}
-
-
-    for subregion_idx in range(1, 171):
-        for subject in subjects:
-            roi = data_dict["subregions_cut"][subject] == subregion_idx
-            for exp_name in img_keys:
-                region_mean_t2star[exp_name][subregion_idx].append(
-                    t2star_maps_reg[exp_name][subject][roi].mean()
-                )
-                region_std_t2star[exp_name][subregion_idx].append(
-                    t2star_maps_reg[exp_name][subject][roi].std()
-                )
-
-    color_dict = {
-        "img_motion": ["#BEBEBE", 0.7],
-        "img_orba": ["#8497B0", 0.8],
-        "img_sld": ["#005293", 0.75],
-        "img_hrqr": ["#44546A", 0.9],
-        "AllSlices-NoKeepCenter": ["#A9C09A", 0.8],
-        "Proposed": ["#6C8B57", 0.9]
-    }
-
-    keys_plot = [k for k in img_keys if k != "img_motion_free"]
-    n_keys = len(keys_plot)
-    fig, axes = plt.subplots(2, n_keys, figsize=(4 * n_keys, 6), sharey='row', sharex='all')
-
-    for ax, key in zip(axes[0, :], keys_plot):
-        data = []
-        for i in range(1, 171):
-            data_i = np.array(region_mean_t2star[key][i]) - np.array(region_mean_t2star["img_motion_free"][i])
-            ax.scatter(region_mean_t2star["img_motion_free"][i],
-                       data_i,
-                       c=color_dict[key][0],
-                       alpha=color_dict[key][1],
-                       s=1)
-            data.append(data_i)
-        ax.axhline(np.nanmean(data), color='black', linestyle='--', linewidth=1)
-        ax.yaxis.grid(True, which='major', color='lightgray', linestyle='--')
-        if ax == axes[0, 0]:
-            ax.set_ylabel("Difference mean T2* [ms]", fontsize=16)
-
-    for ax, key in zip(axes[1, :], keys_plot):
-        data = []
-        for i in range(1, 171):
-            ax.scatter(region_mean_t2star["img_motion_free"][i],
-                       np.array(region_std_t2star[key][i]),
-                       c=color_dict[key][0],
-                       alpha=color_dict[key][1],
-                       s=1)
-            data.append(region_std_t2star[key][i])
-        ax.set_xlabel("Mean T2* [ms] \n(motion-free reference)", fontsize=16)
-        ax.axhline(np.nanmean(data), color='black', linestyle='--', linewidth=1)
-        ax.yaxis.grid(True, which='major', color='lightgray', linestyle='--')
-        if ax == axes[1, 0]:
-            ax.set_ylabel("Std T2* [ms]", fontsize=16)
-
-    plt.subplots_adjust(left=0.05, right=0.99, bottom=0.15, top=0.9, wspace=0.1, hspace=0.2)
-    plt.show()
+        print(f"Subject {subject}")
+        if data_dict["mask_gt"][subject].shape[0] > 0:
+            print(f"GT mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_gt'][subject][ind])}")
+        print(f"Proposed mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_phimo']['Proposed'][subject][ind])}")
+        print(f"AllSlices mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_phimo']['AllSlices-NoKeepCenter'][subject][ind])}")
+        print(f"SLD mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_sld_thr'][subject][ind])}")
+        print(f"OR-BA mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_orba'][subject][ind])}")
 
 
 print("Done")

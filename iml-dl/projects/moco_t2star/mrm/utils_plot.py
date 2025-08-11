@@ -1,11 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
+from matplotlib.patches import Rectangle
 
 
 def individual_imshow(data, title=None, save_path=None, vmin=None, vmax=None,
                       replace_nan=False, show_colorbar=False, cmap='gray',
-                      text_left=None, text_right=None, fontsize=28):
+                      text_left=None, text_right=None, fontsize=28, pad=0,
+                      box_params=None):
 
     if len(data.shape) == 1:
         data = np.repeat(data[np.newaxis], 40, axis=0).T
@@ -17,7 +19,16 @@ def individual_imshow(data, title=None, save_path=None, vmin=None, vmax=None,
                     show_colorbar=show_colorbar, cmap=cmap,
                     text_left=text_left, text_right=text_right,
                     replace_nan=replace_nan, fontsize=fontsize)
-    plt.tight_layout(pad=0)
+    if box_params:
+        x, y = box_params.get('xy', (0, 0))
+        width = box_params.get('width', 10)
+        height = box_params.get('height', 10)
+        edgecolor = box_params.get('edgecolor', 'white')
+        linewidth = box_params.get('linewidth', 1)
+        rect = Rectangle((x, y), width, height, linewidth=linewidth,
+                         edgecolor=edgecolor, facecolor='none')
+        ax.add_patch(rect)
+    plt.tight_layout(pad=pad)
     plt.show()
 
     if save_path:
@@ -27,7 +38,7 @@ def individual_imshow(data, title=None, save_path=None, vmin=None, vmax=None,
 def add_imshow_axis(ax, data, vmin=None, vmax=None, title=None,
                     show_colorbar=False, cmap='gray',
                     text_left=None, text_right=None, text_mid=None,
-                    replace_nan=False, fontsize=28):
+                    replace_nan=False, fontsize=28, box_params=None):
     if replace_nan:
         data[data == np.nan] = 200
     if vmin is not None and vmax is not None:
@@ -49,6 +60,15 @@ def add_imshow_axis(ax, data, vmin=None, vmax=None, title=None,
     if text_right:
         ax.text(0.98, 0, text_right, color='white', fontsize=fontsize, ha='right',
                 va='bottom', transform=ax.transAxes)
+    if box_params:
+        x, y = box_params.get('xy', (0, 0))
+        width = box_params.get('width', 10)
+        height = box_params.get('height', 10)
+        edgecolor = box_params.get('edgecolor', 'white')
+        linewidth = box_params.get('linewidth', 1)
+        rect = Rectangle((x, y), width, height, linewidth=linewidth,
+                         edgecolor=edgecolor, facecolor='none')
+        ax.add_patch(rect)
     ax.axis('off')
 
 
@@ -109,7 +129,12 @@ def plot_violin_iq_metrics(metrics_merged, experiments, statistical_tests=None,
                                     alphas, metrics_dict[m_key],
                                     [imgs_dict[e] for e in experiments],
                                     ylim=ylim)
-            vp_range = get_violin_heights(vp)
+            vp_range = list(get_violin_heights(vp))
+            if isinstance(ylim, list):
+                if vp_range[0] > ylim[1] - 0.1 * (ylim[1] - ylim[0]):
+                    vp_range[0] = ylim[1] - 0.1 * (ylim[1] - ylim[0])
+                if vp_range[1] < ylim[0] + 0.1 * (ylim[1] - ylim[0]):
+                    vp_range[1] = ylim[0] + 0.1 * (ylim[1] - ylim[0])
 
             # Add significance brackets for "stronger" data
             if statistical_tests is not None:
@@ -161,7 +186,11 @@ def configure_axis_iqm(ax, data, positions, colors, alphas, ylabel, experiments,
     ax.set_ylabel(ylabel, fontsize=16)
     ax.set_xlim(-0.3, len(experiments) - 0.7)
     if ylim is not None:
-        ax.set_ylim(top=ylim)
+        # check if it's a list:
+        if isinstance(ylim, list) and len(ylim) == 2:
+            ax.set_ylim(top=ylim[1], bottom=ylim[0])
+        else:
+            ax.set_ylim(top=ylim)
     ax.set_xticks(positions)
     ax.set_xticklabels([], fontsize=10)
     ax.tick_params(axis='y', labelsize=14)

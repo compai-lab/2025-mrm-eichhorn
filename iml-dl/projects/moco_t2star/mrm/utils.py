@@ -1,6 +1,7 @@
 import glob
 import yaml
 import torch
+import numpy as np
 import gc
 from sklearn.metrics import precision_recall_curve
 from data.t2star_loader import *
@@ -439,3 +440,9 @@ def update_deviations(deviations, data_dict, subjects, mask_type,
             deviations[key][mask_type.replace("mask", "img")] = value
 
     return deviations
+
+
+def calc_mask_stats(mask):
+    """ Calculate the mean and percentage of excluded lines in the mask."""
+
+    return np.mean(mask), np.sum(mask < 0.5) / mask.size * 100

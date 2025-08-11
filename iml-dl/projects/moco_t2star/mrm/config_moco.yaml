@@ -1,7 +1,7 @@
 # Choose the test set to run the experiments on
 #test_set: "test-patterns"
-#test_set: "test"
-test_set: "test-extreme"
+test_set: "test"
+#test_set: "test-extreme"
 
 defaults:
   checkpoint_path: &checkpoint_path './results/moco_t2star/'

@@ -184,7 +184,8 @@ print(latex_code)
 
 """ 6. Look at example images: """
 slice_ind = 16
-for subject in ["SQ-struct-00-motionfree", "SQ-struct-46-motionfree"]:
+for subject, point in zip(["SQ-struct-00-motionfree", "SQ-struct-46-motionfree"],
+                          [[15, 20], [25, 20]]):
     outfolder = f"{config['out_folder']}/images_for_figures/example_images_motionfree/"
     os.makedirs(outfolder, exist_ok=True)
     ind = np.where(data_dict["slices_ind"][subject] == slice_ind)[0][0]
@@ -192,6 +193,7 @@ for subject in ["SQ-struct-00-motionfree", "SQ-struct-46-motionfree"]:
     data_shape = np.array(t2star_maps["img_motion"][subject][ind].T.shape)
     cut_right = 10
     data_shape[1] -= cut_right
+    box_params = {'xy': (point[1], point[0]), 'width': 30, 'height': 15}
     fig, axs = plt.subplots(1, 6, figsize=(6*2, 2*data_shape[0]/data_shape[1]))
     for descr, save, ax in zip(["img_motion", "img_orba", "img_sld",
                                 "AllSlices-NoKeepCenter", "Proposed", "img_hrqr"],
@@ -199,9 +201,33 @@ for subject in ["SQ-struct-00-motionfree", "SQ-struct-46-motionfree"]:
                                 "Proposed", "hrqr"],
                                axs):
         add_imshow_axis(ax, t2star_maps[descr][subject][ind].T[:, cut_right//2:-cut_right//2],
-                        vmin=20, vmax=100, replace_nan=True)
+                        vmin=20, vmax=100, replace_nan=True box_params=box_params)
     plt.subplots_adjust(wspace=0, hspace=0, left=0, right=1, top=1, bottom=0)
     plt.savefig(f"{outfolder}combined_t2star_{subject}_slice_{slice_ind}.png", dpi=400)
+    plt.show()
+
+    # plot zoom-ins
+    fig, axs = plt.subplots(1, 6, figsize=(
+        6 * 2, 1))
+    for descr, save, ax in zip(["img_motion", "img_orba", "img_sld",
+                                "AllSlices-NoKeepCenter",
+                                "Proposed", "img_hrqr"],
+                               ["motion", "orba", "sld",
+                                "AllSlices-NoKeepCenter", "Proposed",
+                                "hrqr"],
+                               axs):
+        data = t2star_maps[descr][subject][ind].T[:,
+               cut_right // 2:-cut_right // 2]
+        add_imshow_axis(ax,
+                        data[point[0]:point[0] + 15,
+                        point[1]:point[1] + 30],
+                        vmin=20, vmax=100, replace_nan=True)
+    plt.subplots_adjust(wspace=0.07, hspace=0.06, left=0.01, right=0.99,
+                        top=1,
+                        bottom=0)
+    plt.savefig(
+        f"{outfolder}combined_t2star_zooms_{subject}_slice_{slice_ind}.png",
+        dpi=400)
     plt.show()
 
     individual_imshow(data_dict["mask_phimo"]["Proposed"][subject][ind],
@@ -216,6 +242,16 @@ for subject in ["SQ-struct-00-motionfree", "SQ-struct-46-motionfree"]:
     individual_imshow(data_dict["mask_sld_thr"][subject][ind],
                       save_path=f"{outfolder}mask_sld_{subject}"
                                 f"_slice_{slice_ind}.png", vmin=0, vmax=1)
+
+    print(f"Subject {subject}")
+    print(
+        f"Proposed mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_phimo']['Proposed'][subject][ind])}")
+    print(
+        f"AllSlices mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_phimo']['AllSlices-NoKeepCenter'][subject][ind])}")
+    print(
+        f"SLD mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_sld_thr'][subject][ind])}")
+    print(
+        f"OR-BA mean and ratio of excluded lines: {calc_mask_stats(data_dict['mask_orba'][subject][ind])}")
 
 
 print("Done")
