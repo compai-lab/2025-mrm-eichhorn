@@ -2,7 +2,7 @@
 
 **Hannah Eichhorn**, Veronika Spieker, Kerstin Hammernik, Elisa Saks, Lina Felsner, Kilian Weiss, Christine Preibisch, Julia A. Schnabel
 
-**Accepted at Magnetic Resonance in Medicine** | Preprint available at: [arXiv:2502.17209](https://arxiv.org/abs/2502.17209)
+**Published at Magnetic Resonance in Medicine:**  [https://doi.org/10.1002/mrm.70050](https://doi.org/10.1002/mrm.70050)
 
 **Data-Consistent Image Reconstruction | Self-Supervised Optimization | Motion Correction | 
 Motion Detection | Motion Simulation**
@@ -37,16 +37,15 @@ T2* quantification in research settings and clinical routine.
 
 
 ## Citation
-If you use this code, please cite our arXiv preprint:
+If you use this code, please cite our paper:
 
 ```
-@misc{eichhorn2025,
-      title={Motion-Robust {T2*} Quantification from Gradient Echo MRI with Physics-Informed Deep Learning}, 
-      author={Hannah Eichhorn and Veronika Spieker and Kerstin Hammernik and Elisa Saks and Lina Felsner and Kilian Weiss and Christine Preibisch and Julia A. Schnabel},
-      year={2025},
-      eprint={2502.17209},
-      archivePrefix={arXiv},
-      url={https://arxiv.org/abs/2502.17209}, 
+@article{Eichhorn_2025,
+ author = {Eichhorn, Hannah and Spieker, Veronika and Hammernik, Kerstin and Saks, Elisa and Felsner, Lina and Weiss, Kilian and Preibisch, Christine and Schnabel, Julia A.},
+ year = {2025},
+ title = {Motion-robust T2* quantification from low-resolution gradient echo brain MRI with physics-informed deep learning},
+ journal = {Magnetic Resonance in Medicine},
+ doi = {10.1002/mrm.70050}
 }
 ```
 
@@ -62,6 +61,10 @@ Illustration of PHIMO+.
 (C) Training an unrolled reconstruction network with randomly undersampled *motion-free* multi-echo data. 
 (D) *KeepCenter* extension: always keep the central four k-space points regardless of their motion status to avoid severe contrast loss.
 </p>
+
+
+## Data availability
+An anonymized version of the dataset is publicly available at [https://doi.org/10.15134/2kek-3553](https://doi.org/10.15134/2kek-3553).
 
 ## Contents of this repository:
 
